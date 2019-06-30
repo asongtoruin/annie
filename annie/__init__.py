@@ -41,7 +41,7 @@ class AnimatedGraph:
 
 
 class AnimatedScatter(AnimatedGraph):
-    def __init__(self, x, y, data, animate_from='x'):
+    def __init__(self, x, y, data, animate_from='x', x_lims=None, y_lims=None):
         if animate_from not in ('x', 'y', 'origin'):
             raise ValueError(
                 f'parameter animate_from should be one of x, y or origin '
@@ -54,9 +54,14 @@ class AnimatedScatter(AnimatedGraph):
         self.animate_from = animate_from
 
         # Do an initial plot to get the axis limits for our final frame.
-        ax = sns.scatterplot(self._x_vals, self._y_vals)
-        self._x_lims = ax.get_xlim()
-        self._y_lims = ax.get_ylim()
+        if not (x_lims and y_lims):
+            ax = sns.scatterplot(self._x_vals, self._y_vals)
+            if not x_lims:
+                x_lims = ax.get_xlim()
+            if not y_lims:
+                y_lims = ax.get_ylim()
+        self._x_lims = x_lims
+        self._y_lims = y_lims
         plt.close()
 
         super().__init__()
@@ -89,12 +94,16 @@ if __name__ == '__main__':
     np.random.seed(1)
 
     df = pd.DataFrame(
-        {'x': range(10),
+        {'x': np.random.randint(1, 20, 10),
          'y': np.random.randint(1, 20, 10)}
     )
 
     print(df)
 
-    test_plot = AnimatedScatter(data=df, x='x', y='y')
-    test_plot.set_fig_size((10, 1))
-    plt.show()
+    test_plot = AnimatedScatter(
+        data=df, x='x', y='y', animate_from='origin',
+        x_lims=(0, 20), y_lims=(0, 20)
+    )
+    test_plot.set_fig_size((10, 10))
+    # plt.show()
+    test_plot.save('test.mp4')
