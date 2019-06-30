@@ -37,7 +37,9 @@ class AnimatedGraph:
             frames=self.start_frames + self.plot_frames + self.end_frames
         )
 
-        self._frame_fractions = 1 - np.arange(
+        mult = -1 if smoothing_value % 2 == 0 else 1
+
+        self._frame_fractions = 1 + mult * np.arange(
             start=-1, stop=1/self.plot_frames, step=1 / self.plot_frames
         ) ** smoothing_value
 
@@ -112,8 +114,8 @@ if __name__ == '__main__':
     np.random.seed(1)
 
     df = pd.DataFrame(
-        {'x': np.random.randint(1, 20, 10),
-         'y': np.random.randint(1, 20, 10)}
+        {'x': np.random.randint(0, 20, 20),
+         'y': np.random.randint(0, 20, 20)}
     )
 
     print(df)
