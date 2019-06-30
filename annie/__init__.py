@@ -9,19 +9,31 @@ import seaborn as sns
 class AnimatedGraph:
     def __init__(self):
         self.fig, self.ax = plt.subplots(figsize=(10, 6))
-        self._ani = anim.FuncAnimation(self.fig, self._animate)
-
-        self.writer = anim.writers['ffmpeg'](
-            fps=80, metadata=dict(artist='Me'), bitrate=3600
-        )
+        self.set_anim_params()
 
     def set_fig_size(self, fig_size):
         plt.close(self.fig)
         self.fig, self.ax = plt.subplots(figsize=fig_size)
         # self.fig has changed, so we need to re-declare self._ani
-        self._ani = anim.FuncAnimation(self.fig, self._animate)
+        self._ani = anim.FuncAnimation(
+            self.fig, self._animate, frames=self.num_frames
+        )
+
+    def set_anim_params(self, duration=5, fps=60, bitrate=-1,
+                        writer='ffmpeg'):
+        self.num_frames = duration * fps
+        self.writer = anim.writers[writer](
+            fps=fps, metadata=dict(artist='Me'), bitrate=bitrate
+        )
+
+        self._ani = anim.FuncAnimation(
+            self.fig, self._animate, frames=self.num_frames
+        )
 
     def _animate(self, i):
+        pass
+
+    def _get_position(self, i):
         pass
 
     def save(self, f_path):
@@ -29,9 +41,17 @@ class AnimatedGraph:
 
 
 class AnimatedScatter(AnimatedGraph):
-    def __init__(self, x, y, data):
+    def __init__(self, x, y, data, animate_from='x'):
+        if animate_from not in ('x', 'y', 'origin'):
+            raise ValueError(
+                f'parameter animate_from should be one of x, y or origin '
+                f'(current value "{animate_from}")'
+            )
+
         self._x_vals = data[x]
         self._y_vals = data[y]
+
+        self.animate_from = animate_from
 
         # Do an initial plot to get the axis limits for our final frame.
         ax = sns.scatterplot(self._x_vals, self._y_vals)
@@ -44,18 +64,23 @@ class AnimatedScatter(AnimatedGraph):
     def _animate(self, i):
         # first let's do a simple grow from the x axis
         self.ax.clear()
-        step_size = 0.1
 
-        current_val = step_size * i
-
-        plot_x = self._x_vals
-        plot_y = self._y_vals.where(
-            self._y_vals < current_val, other=current_val
-        )
-
-        sns.scatterplot(x=plot_x, y=plot_y, ax=self.ax)
+        sns.scatterplot(*self._get_position(i), ax=self.ax)
         self.ax.set_xlim(*self._x_lims)
         self.ax.set_ylim(*self._y_lims)
+
+    def _get_position(self, i):
+        if self.animate_from in ('x', 'origin'):
+            y_pos = self._y_vals * i / self.num_frames
+        else:
+            y_pos = self._y_vals
+
+        if self.animate_from in ('y', 'origin'):
+            x_pos = self._x_vals * i / self.num_frames
+        else:
+            x_pos = self._x_vals
+
+        return x_pos, y_pos
 
 
 if __name__ == '__main__':
