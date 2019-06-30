@@ -7,13 +7,19 @@ import seaborn as sns
 
 
 class AnimatedGraph:
-    def __init__(self, figsize=(10, 6)):
-        self.fig, self.ax = plt.subplots(figsize=figsize)
+    def __init__(self):
+        self.fig, self.ax = plt.subplots(figsize=(10, 6))
         self._ani = anim.FuncAnimation(self.fig, self._animate)
 
         self.writer = anim.writers['ffmpeg'](
             fps=80, metadata=dict(artist='Me'), bitrate=3600
         )
+
+    def set_fig_size(self, fig_size):
+        plt.close(self.fig)
+        self.fig, self.ax = plt.subplots(figsize=fig_size)
+        # self.fig has changed, so we need to re-declare self._ani
+        self._ani = anim.FuncAnimation(self.fig, self._animate)
 
     def _animate(self, i):
         pass
@@ -65,4 +71,5 @@ if __name__ == '__main__':
     print(df)
 
     test_plot = AnimatedScatter(data=df, x='x', y='y')
+    test_plot.set_fig_size((10, 1))
     plt.show()
