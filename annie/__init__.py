@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from functools import wraps
+
 import matplotlib.animation as anim
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 
 
@@ -20,7 +23,7 @@ class AnimatedGraph:
         )
 
     def set_anim_params(self, duration=5, fps=60, bitrate=-1,
-                        writer='ffmpeg'):
+                        smoothing_value=1, writer='ffmpeg'):
         self.num_frames = duration * fps
         self.writer = anim.writers[writer](
             fps=fps, metadata=dict(artist='Me'), bitrate=bitrate
@@ -29,6 +32,10 @@ class AnimatedGraph:
         self._ani = anim.FuncAnimation(
             self.fig, self._animate, frames=self.num_frames
         )
+
+        self._frame_fractions = 1 - np.arange(
+            start=-1, stop=1/self.num_frames, step=1/self.num_frames
+        ) ** smoothing_value
 
     def _animate(self, i):
         pass
@@ -75,13 +82,14 @@ class AnimatedScatter(AnimatedGraph):
         self.ax.set_ylim(*self._y_lims)
 
     def _get_position(self, i):
+        curr_frac = self._frame_fractions[i]
         if self.animate_from in ('x', 'origin'):
-            y_pos = self._y_vals * i / self.num_frames
+            y_pos = self._y_vals * curr_frac
         else:
             y_pos = self._y_vals
 
         if self.animate_from in ('y', 'origin'):
-            x_pos = self._x_vals * i / self.num_frames
+            x_pos = self._x_vals * curr_frac
         else:
             x_pos = self._x_vals
 
@@ -89,7 +97,6 @@ class AnimatedScatter(AnimatedGraph):
 
 
 if __name__ == '__main__':
-    import numpy as np
     import pandas as pd
     np.random.seed(1)
 
@@ -105,5 +112,6 @@ if __name__ == '__main__':
         x_lims=(0, 20), y_lims=(0, 20)
     )
     test_plot.set_fig_size((10, 10))
+    test_plot.set_anim_params(smoothing_value=4)
     # plt.show()
     test_plot.save('test.mp4')
