@@ -19,22 +19,26 @@ class AnimatedGraph:
         self.fig, self.ax = plt.subplots(figsize=fig_size)
         # self.fig has changed, so we need to re-declare self._ani
         self._ani = anim.FuncAnimation(
-            self.fig, self._animate, frames=self.num_frames
+            self.fig, self._animate, frames=self.plot_frames
         )
 
-    def set_anim_params(self, duration=5, fps=60, bitrate=-1,
-                        smoothing_value=1, writer='ffmpeg'):
-        self.num_frames = duration * fps
+    def set_anim_params(self, duration=5, start_wait=0, end_wait=2,
+                        fps=60, bitrate=-1, smoothing_value=3, writer='ffmpeg'):
+        self.start_frames = start_wait * fps
+        self.plot_frames = duration * fps
+        self.end_frames = end_wait * fps
+
         self.writer = anim.writers[writer](
             fps=fps, metadata=dict(artist='Me'), bitrate=bitrate
         )
 
         self._ani = anim.FuncAnimation(
-            self.fig, self._animate, frames=self.num_frames
+            self.fig, self._animate,
+            frames=self.start_frames + self.plot_frames + self.end_frames
         )
 
         self._frame_fractions = 1 - np.arange(
-            start=-1, stop=1/self.num_frames, step=1/self.num_frames
+            start=-1, stop=1/self.plot_frames, step=1 / self.plot_frames
         ) ** smoothing_value
 
     def _animate(self, i):
@@ -82,6 +86,13 @@ class AnimatedScatter(AnimatedGraph):
         self.ax.set_ylim(*self._y_lims)
 
     def _get_position(self, i):
+        if i <= self.start_frames:
+            i = 0
+        elif i <= self.start_frames + self.plot_frames:
+            i -= self.start_frames
+        else:
+            i = self.plot_frames
+
         curr_frac = self._frame_fractions[i]
         if self.animate_from in ('x', 'origin'):
             y_pos = self._y_vals * curr_frac
@@ -112,6 +123,6 @@ if __name__ == '__main__':
         x_lims=(0, 20), y_lims=(0, 20)
     )
     test_plot.set_fig_size((10, 10))
-    test_plot.set_anim_params(smoothing_value=4)
+    test_plot.set_anim_params(smoothing_value=5)
     # plt.show()
-    test_plot.save('test.mp4')
+    test_plot.save('from_origin.mp4')
