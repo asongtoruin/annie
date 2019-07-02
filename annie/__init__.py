@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from functools import wraps
-
 import matplotlib.animation as anim
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,9 +8,15 @@ import seaborn as sns
 
 
 class AnimatedGraph:
-    def __init__(self):
+    def __init__(self, animate_from, x_vals, y_vals):
         self.fig, self.ax = plt.subplots(figsize=(10, 6))
+
+        self.animate_from = animate_from
         self.set_anim_params()
+
+        # Set up x values and y values
+        self._x_vals = x_vals
+        self._y_vals = y_vals
 
     def set_fig_size(self, fig_size):
         plt.close(self.fig)
@@ -46,48 +50,10 @@ class AnimatedGraph:
     def _animate(self, i):
         pass
 
-    def _get_position(self, i):
-        pass
-
     def save(self, f_path):
         self._ani.save(f_path, self.writer)
 
-
-class AnimatedScatter(AnimatedGraph):
-    def __init__(self, x, y, data, animate_from='x', x_lims=None, y_lims=None):
-        if animate_from not in ('x', 'y', 'origin'):
-            raise ValueError(
-                f'parameter animate_from should be one of x, y or origin '
-                f'(current value "{animate_from}")'
-            )
-
-        self._x_vals = data[x]
-        self._y_vals = data[y]
-
-        self.animate_from = animate_from
-
-        # Do an initial plot to get the axis limits for our final frame.
-        if not (x_lims and y_lims):
-            ax = sns.scatterplot(self._x_vals, self._y_vals)
-            if not x_lims:
-                x_lims = ax.get_xlim()
-            if not y_lims:
-                y_lims = ax.get_ylim()
-        self._x_lims = x_lims
-        self._y_lims = y_lims
-        plt.close()
-
-        super().__init__()
-
-    def _animate(self, i):
-        # first let's do a simple grow from the x axis
-        self.ax.clear()
-
-        sns.scatterplot(*self._get_position(i), ax=self.ax)
-        self.ax.set_xlim(*self._x_lims)
-        self.ax.set_ylim(*self._y_lims)
-
-    def _get_position(self, i):
+    def _get_simple_position(self, i):
         if i <= self.start_frames:
             i = 0
         elif i <= self.start_frames + self.plot_frames:
@@ -107,6 +73,44 @@ class AnimatedScatter(AnimatedGraph):
             x_pos = self._x_vals
 
         return x_pos, y_pos
+
+
+class AnimatedScatter(AnimatedGraph):
+    def __init__(self, x, y, data, animate_from='x', x_lims=None, y_lims=None,
+                 plot_kwargs=None):
+        if animate_from not in ('x', 'y', 'origin'):
+            raise ValueError(
+                f'parameter animate_from should be one of x, y or origin '
+                f'(current value "{animate_from}")'
+            )
+
+        x_vals = data[x]
+        y_vals = data[y]
+
+        self.animate_from = animate_from
+
+        # Do an initial plot to get the axis limits for our final frame.
+        if not (x_lims and y_lims):
+            ax = sns.scatterplot(x_vals, y_vals)
+            if not x_lims:
+                x_lims = ax.get_xlim()
+            if not y_lims:
+                y_lims = ax.get_ylim()
+        self._x_lims = x_lims
+        self._y_lims = y_lims
+        plt.close()
+
+        super().__init__(
+            animate_from=animate_from, x_vals=x_vals, y_vals=y_vals
+        )
+
+    def _animate(self, i):
+        # first let's do a simple grow from the x axis
+        self.ax.clear()
+
+        sns.scatterplot(*self._get_simple_position(i), ax=self.ax)
+        self.ax.set_xlim(*self._x_lims)
+        self.ax.set_ylim(*self._y_lims)
 
 
 if __name__ == '__main__':
