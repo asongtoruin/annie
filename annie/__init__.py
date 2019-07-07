@@ -101,7 +101,7 @@ class AnimatedGraph:
 
 class AnimatedScatter(AnimatedGraph):
     def __init__(self, x, y, animate_from='x', x_lims=None, y_lims=None,
-                 plot_kwargs=None):
+                 plot_kwargs=None, legend_kwargs = None):
         if animate_from not in ('x', 'y', 'origin'):
             raise ValueError(
                 f'parameter animate_from should be one of x, y or origin '
@@ -109,6 +109,7 @@ class AnimatedScatter(AnimatedGraph):
             )
 
         self.animate_from = animate_from
+        self.legend_kwargs = copy_dict(legend_kwargs)
 
         super().__init__(
             animate_from=animate_from, x=x, y=y, plot_kwargs=plot_kwargs
@@ -116,7 +117,9 @@ class AnimatedScatter(AnimatedGraph):
 
         # Do an initial plot to get the axis limits for our final frame.
         if not (x_lims and y_lims):
-            ax = sns.scatterplot(self._x_plot, self._y_plot, **self.plot_kwargs)
+            ax = sns.scatterplot(
+                self._x_plot, self._y_plot, legend=False, **self.plot_kwargs
+            )
             if not x_lims:
                 x_lims = ax.get_xlim()
             if not y_lims:
@@ -138,6 +141,9 @@ class AnimatedScatter(AnimatedGraph):
         self.ax.set_xlim(*self._x_lims)
         self.ax.set_ylim(*self._y_lims)
 
+        if self.legend_kwargs:
+            plt.legend(**self.legend_kwargs)
+
 
 if __name__ == '__main__':
     import pandas as pd
@@ -153,7 +159,8 @@ if __name__ == '__main__':
 
     test_plot = AnimatedScatter(
         x='x', y='y', animate_from='origin',
-        x_lims=(0, 20), y_lims=(0, 20), plot_kwargs=dict(data=df, hue='hue')
+        x_lims=(0, 20), y_lims=(0, 20),
+        plot_kwargs=dict(data=df, hue='hue'), legend_kwargs=dict(loc='upper left')
     )
     test_plot.set_fig_size((10, 10))
     test_plot.set_anim_params(smoothing_value=5)
