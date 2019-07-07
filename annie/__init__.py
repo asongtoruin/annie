@@ -8,12 +8,18 @@ import numpy as np
 import seaborn as sns
 
 
+def copy_dict(input_dict):
+    return deepcopy(input_dict) if input_dict else dict()
+
+
 class AnimatedGraph:
     def __init__(self, x, y, animate_from, plot_kwargs=None):
         self.fig, self.ax = plt.subplots(figsize=(10, 6))
 
         self.animate_from = animate_from
         self.set_anim_params()
+
+        self.plot_kwargs = copy_dict(plot_kwargs)
 
         if plot_kwargs:
             self.plot_kwargs = deepcopy(plot_kwargs)
@@ -32,8 +38,6 @@ class AnimatedGraph:
 
                 self._x_plot = deepcopy(x)
                 self._y_plot = deepcopy(y)
-        else:
-            self.plot_kwargs = dict()
 
         self._x = x
         self._y = y
