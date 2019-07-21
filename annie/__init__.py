@@ -12,13 +12,17 @@ def copy_dict(input_dict):
 
 
 class AnimatedGraph:
-    def __init__(self, x, y, animate_from, plot_kwargs=None):
+    def __init__(self, x, y, func, animate_from, plot_kwargs=None,
+                 legend_kwargs=None):
         self.fig, self.ax = plt.subplots(figsize=(10, 6))
+
+        self._func = func
 
         self.animate_from = animate_from
         self.set_anim_params()
 
         self.plot_kwargs = copy_dict(plot_kwargs)
+        self.legend_kwargs = copy_dict(legend_kwargs)
 
         if plot_kwargs:
             self.plot_kwargs = deepcopy(plot_kwargs)
@@ -26,10 +30,13 @@ class AnimatedGraph:
                 self.data_mode = True
                 self.data = plot_kwargs.pop('data').copy()
 
-                self.plot_kwargs['data'] = self.data
-
                 self._x_plot = x + '_plot'
                 self._y_plot = y + '_plot'
+
+                self.data[self._x_plot] = self.data[x]
+                self.data[self._y_plot] = self.data[y]
+
+                self.plot_kwargs['data'] = self.data
             else:
                 self.data_mode = False
                 self.data = None
@@ -70,7 +77,16 @@ class AnimatedGraph:
         ) ** smoothing_value
 
     def _animate(self, i):
-        pass
+        self.ax.clear()
+
+        self._update_simple_position(i)
+
+        self._func(
+            self._x_plot, self._y_plot, ax=self.ax, **self.plot_kwargs
+        )
+
+        if self.legend_kwargs:
+            plt.legend(**self.legend_kwargs)
 
     def save(self, f_path):
         self._ani.save(f_path, self.writer)
