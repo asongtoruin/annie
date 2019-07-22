@@ -6,8 +6,8 @@ from matplotlib import pyplot as plt
 from . import AnimatedGraph, copy_dict
 
 
-class AnimatedBar(AnimatedGraph):
-    def __init__(self, categories, values, orient='v', value_lims=None,
+class _AnimatedCategorical(AnimatedGraph):
+    def __init__(self, categories, values, func, orient='v', value_lims=None,
                  plot_kwargs=None, legend_kwargs=None):
         temp_p_kws = copy_dict(plot_kwargs) if plot_kwargs else dict()
 
@@ -27,16 +27,15 @@ class AnimatedBar(AnimatedGraph):
         temp_p_kws['orient'] = orient
 
         super().__init__(
-            animate_from=animate_from, x=x_vals, y=y_vals, func=sns.barplot,
+            animate_from=animate_from, x=x_vals, y=y_vals, func=func,
             plot_kwargs=plot_kwargs, legend_kwargs=legend_kwargs
         )
 
         # Do an initial plot to get the axis limits for our final frame.
         if not value_lims:
-            ax = sns.barplot(
+            ax = func(
                 self._x_plot, self._y_plot, **self.plot_kwargs
             )
-            print('finished initial plot')
             if self._value_ax == 'x':
                 value_lims = ax.get_xlim()
             else:
@@ -51,3 +50,33 @@ class AnimatedBar(AnimatedGraph):
             self.ax.set_xlim(*self._value_lims)
         else:
             self.ax.set_ylim(*self._value_lims)
+
+
+class AnimatedBar(_AnimatedCategorical):
+    def __init__(self, categories, values, orient='v', value_lims=None,
+                 plot_kwargs=None, legend_kwargs=None):
+        super().__init__(
+            categories=categories, values=values, func=sns.barplot,
+            orient=orient, value_lims=value_lims, plot_kwargs=plot_kwargs,
+            legend_kwargs=legend_kwargs
+        )
+
+
+class AnimatedBox(_AnimatedCategorical):
+    def __init__(self, categories, values, orient='v', value_lims=None,
+                 plot_kwargs=None, legend_kwargs=None):
+        super().__init__(
+            categories=categories, values=values, func=sns.boxplot,
+            orient=orient, value_lims=value_lims, plot_kwargs=plot_kwargs,
+            legend_kwargs=legend_kwargs
+        )
+
+
+class AnimatedViolin(_AnimatedCategorical):
+    def __init__(self, categories, values, orient='v', value_lims=None,
+                 plot_kwargs=None, legend_kwargs=None):
+        super().__init__(
+            categories=categories, values=values, func=sns.violinplot,
+            orient=orient, value_lims=value_lims, plot_kwargs=plot_kwargs,
+            legend_kwargs=legend_kwargs
+        )
